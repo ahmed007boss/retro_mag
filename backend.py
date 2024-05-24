@@ -9,10 +9,10 @@ import os
 import mysql.connector
 
 conn = mysql.connector.connect(
-    host="127.0.0.1",
-    user="root",
-    password="",
-    database="retro_mag"
+    host="mysql-6ae2b8d-ahmed-f254.l.aivencloud.com",
+    user="avnadmin",
+    password="AVNS_9E9kqttyyPwEk-U3Hpg",
+    database="defaultdb"
 )
 
 app = FastAPI(
