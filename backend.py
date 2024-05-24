@@ -8,12 +8,20 @@ import shutil
 import os
 import mysql.connector
 
-conn = mysql.connector.connect(
-    host="mysql://avnadmin:AVNS_9E9kqttyyPwEk-U3Hpg@mysql-6ae2b8d-ahmed-f254.l.aivencloud.com:23655/defaultdb?ssl-mode=REQUIRED",
-    user="avnadmin",
-    password="AVNS_9E9kqttyyPwEk-U3Hpg",
-    database="defaultdb"
-)
+from mysql.connector import errorcode
+
+# Define the connection parameters
+config = {
+    'user': 'avnadmin',
+    'password': 'AVNS_9E9kqttyyPwEk-U3Hpg',
+    'host': 'mysql-6ae2b8d-ahmed-f254.l.aivencloud.com',
+    'database': 'defaultdb',
+    'port': 23655,
+    'charset': 'utf8mb4',
+    'connect_timeout': 10,
+    'ssl_ca': 'ca-cert.pem',  # Path to the SSL CA certificate
+    'ssl_verify_cert': True  # Verify the server certificate
+}
 
 app = FastAPI(
     description="retro mag"
