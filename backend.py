@@ -9,7 +9,7 @@ import os
 import mysql.connector
 
 conn = mysql.connector.connect(
-    host="mysql-6ae2b8d-ahmed-f254.l.aivencloud.com",
+    host="mysql://avnadmin:AVNS_9E9kqttyyPwEk-U3Hpg@mysql-6ae2b8d-ahmed-f254.l.aivencloud.com:23655/defaultdb?ssl-mode=REQUIRED",
     user="avnadmin",
     password="AVNS_9E9kqttyyPwEk-U3Hpg",
     database="defaultdb"
