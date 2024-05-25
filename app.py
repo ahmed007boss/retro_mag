@@ -22,6 +22,8 @@ config = {
     'ssl_ca': 'ca-cert.pem',  # Path to the SSL CA certificate
     'ssl_verify_cert': True  # Verify the server certificate
 }
+conn = mysql.connector.connect(**config)
+cursor = conn.cursor()
 
 app = FastAPI(
     description="retro mag"
@@ -48,7 +50,7 @@ async def root():
 @app.get("/get_category", tags=["Data Processing"])
 async def process_data():
     try:
-        cursor = conn.cursor()
+        # cursor = conn.cursor()
         query = """SELECT * FROM `category`"""
         cursor.execute(query)
         result = cursor.fetchall()
@@ -58,14 +60,15 @@ async def process_data():
         return processed_data
     except Exception as e:
         return {"error": str(e)}
-    finally:
-        cursor.close()
+    # finally:
+        # cursor.close()
 
-@app.post("/get_category_magazine", tags=["Data Processing"])
+@app.post("/GetCategoryMagazine", tags=["Data Processing"])
 async def process_data(data:dict):
     try:
-        category_ID=data["category_ID"]
-        cursor = conn.cursor()
+        print(data) 
+        category_ID=data["categoryId"]
+        print(category_ID)
         query = """SELECT * FROM `magazine` WHERE `category_ID`={};""".format(category_ID)
         cursor.execute(query)
         result = cursor.fetchall()
@@ -80,16 +83,16 @@ async def process_data(data:dict):
             result1 = cursor.fetchall()
             columns = [desc[0] for desc in cursor.description]
             df1 = pd.DataFrame(result1, columns=columns)
-            data["Image"].loc[i]="http://192.168.1.224:8000/images"+df1["image_url"].loc[0]
+            data["Image"].loc[i]="https://retromagapi.azurewebsites.net:80/images"+df1["image_url"].loc[0]
         
 
 
-        processed_data = {"result":data.to_dict(orient='records')}
+        processed_data = {"Magazines":data.to_dict(orient='records')}
         return processed_data
     except Exception as e:
         return {"error": str(e)}
-    finally:
-        cursor.close()
+    # finally:
+    #     # cursor.close()
 def fetch_data(cursor, query):
     cursor.execute(query)
     columns = [desc[0] for desc in cursor.description]
@@ -102,7 +105,7 @@ def fetch_image_url(cursor, image_id):
     cursor.execute(query)
     result = cursor.fetchone()
     if result:
-        return "http://192.168.1.224:8000/images" + result[0]
+        return "https://retromagapi.azurewebsites.net:80/images" + result[0]
     return None
 @app.get("/GetALLMagazine", tags=["Data Processing"])
 async def process_data():
@@ -138,12 +141,12 @@ async def process_data():
             return processed_data
     except Exception as e:
         return {"error": str(e)}
-    finally:
-        cursor.close()
+    # finally:
+        # cursor.close()
 
 @app.post("/GetDataMagazine", tags=["Data Processing"])
 async def process_data(data: dict):
-    cursor = conn.cursor()
+    # cursor = conn.cursor()
     try:
         index = {}
         # print(data)
@@ -178,17 +181,17 @@ async def process_data(data: dict):
         df3 = pd.DataFrame(result3, columns=columns)
 
         # Process context data
-        context = [{"ID": dt["ID"], "Paragraph": dt["text"]} for _, dt in df.iterrows()]
+        context = [{"ID": dt["ID"], "Paragraph": dt["Context"]} for _, dt in df.iterrows()]
         # index.append({"Context": context})
         index["Context"]=context
 
         # Process image data
-        images = [{"ID": dt["ID"], "ContextID": dt["context_id"], "ImageUrl": "http://192.168.1.224:8000/images" + dt["image_url"]} for _, dt in df2.iterrows()]
+        images = [{"ID": dt["ID"], "ContextID": dt["context_id"], "ImageUrl": "https://retromagapi.azurewebsites.net:80/images" + dt["image_url"]} for _, dt in df2.iterrows()]
         # index.append({"Images": images})
         index["Images"]= images
 
         # Process video data
-        videos = [{"VideoUrl": "http://192.168.1.224:8000/images" + dt["video_url"]} for _, dt in df3.iterrows()]
+        videos = [{"VideoUrl": "https://retromagapi.azurewebsites.net:80/images" + dt["video_url"]} for _, dt in df3.iterrows()]
         # index.append({"Videos": videos})
         index["Videos"]=videos
         index["Headline"]=df0.loc[0].Headline
@@ -197,7 +200,7 @@ async def process_data(data: dict):
     
     except Exception as e:
         return {"error": str(e)}
-    finally:
-        cursor.close()
+    # finally:
+        # cursor.close()
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=80)
