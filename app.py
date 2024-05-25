@@ -69,7 +69,7 @@ def get_category_magazine():
             result1 = cursor.fetchall()
             columns = [desc[0] for desc in cursor.description]
             df1 = pd.DataFrame(result1, columns=columns)
-            data["Image"].iloc[i] = "http://192.168.1.45:80/images" + df1["image_url"].iloc[0]
+            data["Image"].iloc[i] = "https://retromagapi.azurewebsites.net/images" + df1["image_url"].iloc[0]
 
         processed_data = {"Magazines": data.to_dict(orient='records')}
         return jsonify(processed_data)
@@ -88,7 +88,7 @@ def fetch_image_url(cursor, image_id):
     cursor.execute(query)
     result = cursor.fetchone()
     if result:
-        return "http://192.168.1.45:80/images" + result[0]
+        return "https://retromagapi.azurewebsites.net/images" + result[0]
     return None
 
 @app.route("/GetALLMagazine", methods=["GET"])
@@ -156,10 +156,10 @@ def get_data_magazine():
         context = [{"ID": dt["ID"], "Paragraph": dt["Context"]} for _, dt in df.iterrows()]
         index["Context"] = context
 
-        images = [{"ID": dt["ID"], "ContextID": dt["context_id"], "ImageUrl": "http://192.168.1.45:80/images" + dt["image_url"]} for _, dt in df2.iterrows()]
+        images = [{"ID": dt["ID"], "ContextID": dt["context_id"], "ImageUrl": "https://retromagapi.azurewebsites.net/images" + dt["image_url"]} for _, dt in df2.iterrows()]
         index["Images"] = images
 
-        videos = [{"VideoUrl": "http://192.168.1.45:80/images" + dt["video_url"]} for _, dt in df3.iterrows()]
+        videos = [{"VideoUrl": "https://retromagapi.azurewebsites.net/images" + dt["video_url"]} for _, dt in df3.iterrows()]
         index["Videos"] = videos
         index["Headline"] = df0.loc[0].Headline
 
