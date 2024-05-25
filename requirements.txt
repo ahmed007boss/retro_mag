@@ -2,3 +2,5 @@ uvicorn
 fastapi
 pandas
 mysql-connector-python
+Flask
+Flask-Cors
