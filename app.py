@@ -1,14 +1,11 @@
-import uvicorn
-from fastapi import FastAPI, File, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse,JSONResponse
+from flask import Flask, request, jsonify, send_from_directory, render_template_string
+from flask_cors import CORS
 import pandas as pd
-from fastapi.staticfiles import StaticFiles
-import shutil
-import os
 import mysql.connector
+import os
 
-from mysql.connector import errorcode
+app = Flask(__name__)
+CORS(app)
 
 # Define the connection parameters
 config = {
@@ -25,74 +22,60 @@ config = {
 conn = mysql.connector.connect(**config)
 cursor = conn.cursor()
 
-app = FastAPI(
-    description="retro mag"
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.mount("/images", StaticFiles(directory="IMAGE"), name="data")
-@app.get("/", response_class=HTMLResponse, tags=["Root"])
-async def root():
-    return """
+@app.route("/")
+def root():
+    return render_template_string("""
     <h2 style="text-align:center">
         Click
         <a href="/docs">API DOC</a>
         to see the API doc
     </h2>
-    """
+    """)
 
-@app.get("/get_category", tags=["Data Processing"])
-async def process_data():
+@app.route("/images/<path:filename>")
+def images(filename):
+    return send_from_directory("IMAGE", filename)
+
+@app.route("/get_category", methods=["GET"])
+def get_category():
     try:
-        # cursor = conn.cursor()
-        query = """SELECT * FROM `category`"""
+        query = "SELECT * FROM `category`"
         cursor.execute(query)
         result = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         df = pd.DataFrame(result, columns=columns)
-        processed_data = {"result":df.to_dict(orient='records')}
-        return processed_data
+        processed_data = {"result": df.to_dict(orient='records')}
+        return jsonify(processed_data)
     except Exception as e:
-        return {"error": str(e)}
-    # finally:
-        # cursor.close()
+        return jsonify({"error": str(e)})
 
-@app.post("/GetCategoryMagazine", tags=["Data Processing"])
-async def process_data(data:dict):
+@app.route("/GetCategoryMagazine", methods=["POST"])
+def get_category_magazine():
     try:
-        print(data) 
-        category_ID=data["categoryId"]
-        print(category_ID)
-        query = """SELECT * FROM `magazine` WHERE `category_ID`={};""".format(category_ID)
+        data = request.json
+        category_ID = data["categoryId"]
+        query = f"SELECT * FROM `magazine` WHERE `category_ID`={category_ID};"
         cursor.execute(query)
         result = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         df = pd.DataFrame(result, columns=columns)
-        data=df[["ID","NAME","Headline","category_ID"]]
-        data["Image"]=""
+        data = df[["ID", "NAME", "Headline", "category_ID"]]
+        data["Image"] = ""
+
         for i in range(len(df)):
-            dt=df["Image_ID"].loc[i]
-            query1 = """SELECT * FROM `image` WHERE `ID`={}""".format(dt)
+            dt = df["Image_ID"].iloc[i]
+            query1 = f"SELECT * FROM `image` WHERE `ID`={dt}"
             cursor.execute(query1)
             result1 = cursor.fetchall()
             columns = [desc[0] for desc in cursor.description]
             df1 = pd.DataFrame(result1, columns=columns)
-            data["Image"].loc[i]="https://retromagapi.azurewebsites.net:80/images"+df1["image_url"].loc[0]
-        
+            data["Image"].iloc[i] = "http://192.168.1.45:80/images" + df1["image_url"].iloc[0]
 
-
-        processed_data = {"Magazines":data.to_dict(orient='records')}
-        return processed_data
+        processed_data = {"Magazines": data.to_dict(orient='records')}
+        return jsonify(processed_data)
     except Exception as e:
-        return {"error": str(e)}
-    # finally:
-    #     # cursor.close()
+        return jsonify({"error": str(e)})
+
 def fetch_data(cursor, query):
     cursor.execute(query)
     columns = [desc[0] for desc in cursor.description]
@@ -105,24 +88,21 @@ def fetch_image_url(cursor, image_id):
     cursor.execute(query)
     result = cursor.fetchone()
     if result:
-        return "https://retromagapi.azurewebsites.net:80/images" + result[0]
+        return "http://192.168.1.45:80/images" + result[0]
     return None
-@app.get("/GetALLMagazine", tags=["Data Processing"])
-async def process_data():
+
+@app.route("/GetALLMagazine", methods=["GET"])
+def get_all_magazine():
     try:
         with conn.cursor() as cursor:
-            # Fetch magazine data
-            magazine_query = """SELECT * FROM `magazine`;"""
+            magazine_query = "SELECT * FROM `magazine`;"
             magazine_df = fetch_data(cursor, magazine_query)
 
-            # Fetch category data
-            category_query = """SELECT * FROM `category`;"""
+            category_query = "SELECT * FROM `category`;"
             category_df = fetch_data(cursor, category_query)
 
-            # Merge magazine and category data
             merged_df = pd.merge(magazine_df, category_df, left_on='category_ID', right_on='ID', suffixes=('_magazine', '_category'))
 
-            # Prepare result dictionary
             result = {}
             for _, row in merged_df.iterrows():
                 category_name = row['Name']
@@ -138,69 +118,55 @@ async def process_data():
                     result[category_name] = [magazine_info]
 
             processed_data = {"Model": result}
-            return processed_data
+            return jsonify(processed_data)
     except Exception as e:
-        return {"error": str(e)}
-    # finally:
-        # cursor.close()
+        return jsonify({"error": str(e)})
 
-@app.post("/GetDataMagazine", tags=["Data Processing"])
-async def process_data(data: dict):
-    # cursor = conn.cursor()
+@app.route("/GetDataMagazine", methods=["POST"])
+def get_data_magazine():
     try:
+        data = request.json
         index = {}
-        # print(data)
         MAG_ID = data["magId"]
 
-        # Retrieve context data
-        query0 = """SELECT * FROM `magazine` WHERE `ID`={};""".format(MAG_ID)
+        query0 = f"SELECT * FROM `magazine` WHERE `ID`={MAG_ID};"
         cursor.execute(query0)
         result0 = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         df0 = pd.DataFrame(result0, columns=columns)
 
-        # Retrieve context data
-        query = """SELECT * FROM `context` WHERE `MAG_ID`={};""".format(MAG_ID)
+        query = f"SELECT * FROM `context` WHERE `MAG_ID`={MAG_ID};"
         cursor.execute(query)
         result = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         df = pd.DataFrame(result, columns=columns)
 
-        # Retrieve image data
-        query2 = """SELECT * FROM `image` WHERE `MAG_ID`={};""".format(MAG_ID)
+        query2 = f"SELECT * FROM `image` WHERE `MAG_ID`={MAG_ID};"
         cursor.execute(query2)
         result2 = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         df2 = pd.DataFrame(result2, columns=columns)
 
-        # Retrieve video data
-        query3 = """SELECT * FROM `videos` WHERE `MAG_ID`={};""".format(MAG_ID)
+        query3 = f"SELECT * FROM `videos` WHERE `MAG_ID`={MAG_ID};"
         cursor.execute(query3)
         result3 = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         df3 = pd.DataFrame(result3, columns=columns)
 
-        # Process context data
         context = [{"ID": dt["ID"], "Paragraph": dt["Context"]} for _, dt in df.iterrows()]
-        # index.append({"Context": context})
-        index["Context"]=context
+        index["Context"] = context
 
-        # Process image data
-        images = [{"ID": dt["ID"], "ContextID": dt["context_id"], "ImageUrl": "https://retromagapi.azurewebsites.net:80/images" + dt["image_url"]} for _, dt in df2.iterrows()]
-        # index.append({"Images": images})
-        index["Images"]= images
+        images = [{"ID": dt["ID"], "ContextID": dt["context_id"], "ImageUrl": "http://192.168.1.45:80/images" + dt["image_url"]} for _, dt in df2.iterrows()]
+        index["Images"] = images
 
-        # Process video data
-        videos = [{"VideoUrl": "https://retromagapi.azurewebsites.net:80/images" + dt["video_url"]} for _, dt in df3.iterrows()]
-        # index.append({"Videos": videos})
-        index["Videos"]=videos
-        index["Headline"]=df0.loc[0].Headline
+        videos = [{"VideoUrl": "http://192.168.1.45:80/images" + dt["video_url"]} for _, dt in df3.iterrows()]
+        index["Videos"] = videos
+        index["Headline"] = df0.loc[0].Headline
+
         processed_data = {"Model": index}
-        return processed_data
-    
+        return jsonify(processed_data)
     except Exception as e:
-        return {"error": str(e)}
-    # finally:
-        # cursor.close()
+        return jsonify({"error": str(e)})
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=80)
+    app.run(host="0.0.0.0", port=80)
