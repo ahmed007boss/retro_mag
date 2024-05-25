@@ -22,7 +22,7 @@ config = {
     'ssl_ca': 'ca-cert.pem',  # Path to the SSL CA certificate
     'ssl_verify_cert': True  # Verify the server certificate
 }
-
+conn = mysql.connector.connect(**config)
 app = FastAPI(
     description="retro mag"
 )
