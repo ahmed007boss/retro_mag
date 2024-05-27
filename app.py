@@ -167,6 +167,52 @@ def get_data_magazine():
         return jsonify(processed_data)
     except Exception as e:
         return jsonify({"error": str(e)})
+@app.route("/latestfivemagazines", methods=["GET"])
+def get_latestFiveMagazines():
+    try:
+        # Fetch the latest five magazines
+        query = "SELECT * FROM latestFiveMagazines;"
+        cursor.execute(query)
+        result = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(result, columns=columns)
+        
+        listofdata = []
+
+        for i in range(len(df)):
+            dt = df.loc[i]
+
+            # Fetch magazine details by ID
+            query3 = f"SELECT * FROM magazine WHERE ID={dt.MAG_ID};"
+            cursor.execute(query3)
+            result3 = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            df3 = pd.DataFrame(result3, columns=columns)
+
+            # Fetch image details by Image_ID from magazine details
+            query2 = f"SELECT * FROM image WHERE ID={df3.loc[0]['Image_ID']};"
+            cursor.execute(query2)
+            result2 = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            df2 = pd.DataFrame(result2, columns=columns)
+
+            # Construct the data dictionary for each magazine
+            magazine_data = {
+                "ID": str(df3.loc[0]["ID"]),
+                "NAME": df3.loc[0]["NAME"],
+                "Headline": df3.loc[0]["Headline"],
+                "ImageUrl": f"https://retromagapi.azurewebsites.net/images{df2.loc[0]['image_url']}"
+            }
+
+            listofdata.append(magazine_data)
+
+        data = {"Model": listofdata}
+        # print()
+        return data
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
