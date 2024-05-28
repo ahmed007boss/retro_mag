@@ -6,7 +6,7 @@ import os
 
 app = Flask(__name__)
 CORS(app)
-print("HI")
+
 # Define the connection parameters
 config = {
     'user': 'avnadmin',
@@ -116,8 +116,24 @@ def get_all_magazine():
                     result[category_name].append(magazine_info)
                 else:
                     result[category_name] = [magazine_info]
+            query_latest = "SELECT * FROM latestFiveMagazines;"
+            latest_df = fetch_data(cursor, query_latest)
+            listofdata = []
+            for _, row in latest_df.iterrows():
+                query3 = f"SELECT * FROM magazine WHERE ID={row['MAG_ID']};"
+                five_df = fetch_data(cursor, query3)
+                query2 = f"SELECT * FROM image WHERE ID={five_df.loc[0]['Image_ID']};"
+                image_df = fetch_data(cursor, query2)
 
-            processed_data = {"Model": result}
+                magazine_data = {
+                "ID": str(five_df.loc[0]["ID"]),
+                "NAME": five_df.loc[0]["NAME"],
+                "Headline": five_df.loc[0]["Headline"],
+                "ImageUrl": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
+                }
+                listofdata.append(magazine_data)
+
+            processed_data = {"Model": result,"LatestFiveMagazines":listofdata}
             return jsonify(processed_data)
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -167,51 +183,51 @@ def get_data_magazine():
         return jsonify(processed_data)
     except Exception as e:
         return jsonify({"error": str(e)})
-@app.route("/latestfivemagazines", methods=["GET"])
-def get_latestFiveMagazines():
-    try:
-        # Fetch the latest five magazines
-        query = "SELECT * FROM latestFiveMagazines;"
-        cursor.execute(query)
-        result = cursor.fetchall()
-        columns = [desc[0] for desc in cursor.description]
-        df = pd.DataFrame(result, columns=columns)
+# @app.route("/latestfivemagazines", methods=["GET"])
+# def get_latestFiveMagazines():
+#     try:
+#         # Fetch the latest five magazines
+#         query = "SELECT * FROM latestFiveMagazines;"
+#         cursor.execute(query)
+#         result = cursor.fetchall()
+#         columns = [desc[0] for desc in cursor.description]
+#         df = pd.DataFrame(result, columns=columns)
         
-        listofdata = []
+#         listofdata = []
 
-        for i in range(len(df)):
-            dt = df.loc[i]
+#         for i in range(len(df)):
+#             dt = df.loc[i]
 
-            # Fetch magazine details by ID
-            query3 = f"SELECT * FROM magazine WHERE ID={dt.MAG_ID};"
-            cursor.execute(query3)
-            result3 = cursor.fetchall()
-            columns = [desc[0] for desc in cursor.description]
-            df3 = pd.DataFrame(result3, columns=columns)
+#             # Fetch magazine details by ID
+#             query3 = f"SELECT * FROM magazine WHERE ID={dt.MAG_ID};"
+#             cursor.execute(query3)
+#             result3 = cursor.fetchall()
+#             columns = [desc[0] for desc in cursor.description]
+#             df3 = pd.DataFrame(result3, columns=columns)
 
-            # Fetch image details by Image_ID from magazine details
-            query2 = f"SELECT * FROM image WHERE ID={df3.loc[0]['Image_ID']};"
-            cursor.execute(query2)
-            result2 = cursor.fetchall()
-            columns = [desc[0] for desc in cursor.description]
-            df2 = pd.DataFrame(result2, columns=columns)
+#             # Fetch image details by Image_ID from magazine details
+#             query2 = f"SELECT * FROM image WHERE ID={df3.loc[0]['Image_ID']};"
+#             cursor.execute(query2)
+#             result2 = cursor.fetchall()
+#             columns = [desc[0] for desc in cursor.description]
+#             df2 = pd.DataFrame(result2, columns=columns)
 
-            # Construct the data dictionary for each magazine
-            magazine_data = {
-                "ID": str(df3.loc[0]["ID"]),
-                "NAME": df3.loc[0]["NAME"],
-                "Headline": df3.loc[0]["Headline"],
-                "ImageUrl": f"https://retromagapi.azurewebsites.net/images{df2.loc[0]['image_url']}"
-            }
+#             # Construct the data dictionary for each magazine
+#             magazine_data = {
+#                 "ID": str(df3.loc[0]["ID"]),
+#                 "NAME": df3.loc[0]["NAME"],
+#                 "Headline": df3.loc[0]["Headline"],
+#                 "ImageUrl": f"https://retromagapi.azurewebsites.net/images{df2.loc[0]['image_url']}"
+#             }
 
-            listofdata.append(magazine_data)
+#             listofdata.append(magazine_data)
 
-        data = {"Model": listofdata}
-        # print()
-        return data
+#         data = {"Model": listofdata}
+#         # print()
+#         return data
 
-    except Exception as e:
-        return jsonify({"error": str(e)})
+#     except Exception as e:
+#         return jsonify({"error": str(e)})
 
 
 if __name__ == "__main__":
