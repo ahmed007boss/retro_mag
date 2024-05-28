@@ -124,13 +124,13 @@ def get_all_magazine():
                 five_df = fetch_data(cursor, query3)
                 query2 = f"SELECT * FROM image WHERE ID={five_df.loc[0]['Image_ID']};"
                 image_df = fetch_data(cursor, query2)
-
+                merged_df2 = pd.merge(five_df, category_df, left_on='category_ID', right_on='ID', suffixes=('_magazine', '_category'))
                 magazine_data = {
-                "ID": str(five_df.loc[0]["ID"]),
-                "NAME": five_df.loc[0]["NAME"],
-                "Headline": five_df.loc[0]["Headline"],
+                "ID": str(merged_df2.loc[0]["ID"]),
+                "NAME": merged_df2.loc[0]["NAME"],
+                "Headline": merged_df2.loc[0]["Headline"],
                 "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
-                ,"Category":five_df.loc[0]["category_ID"]
+                ,"Category":merged_df2.loc[0]["category_ID"]
                 }
                 listofdata.append(magazine_data)
                 result["LatestFiveMagazines"]=listofdata
