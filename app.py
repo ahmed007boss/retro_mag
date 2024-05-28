@@ -129,7 +129,7 @@ def get_all_magazine():
                 "ID": str(five_df.loc[0]["ID"]),
                 "NAME": five_df.loc[0]["NAME"],
                 "Headline": five_df.loc[0]["Headline"],
-                "ImageUrl": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
+                "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
                 }
                 listofdata.append(magazine_data)
                 result["LatestFiveMagazines"]=listofdata
@@ -179,6 +179,7 @@ def get_data_magazine():
         videos = [{"VideoUrl": "https://retromagapi.azurewebsites.net/images" + dt["video_url"]} for _, dt in df3.iterrows()]
         index["Videos"] = videos
         index["Headline"] = df0.loc[0].Headline
+        index["Name"] = df0.loc[0].NAME
 
         processed_data = {"Model": index}
         return jsonify(processed_data)
