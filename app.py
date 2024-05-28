@@ -20,7 +20,6 @@ config = {
     'ssl_verify_cert': True  # Verify the server certificate
 }
 conn = mysql.connector.connect(**config)
-cursor = conn.cursor()
 
 @app.route("/")
 def root():
@@ -39,6 +38,8 @@ def images(filename):
 @app.route("/get_category", methods=["GET"])
 def get_category():
     try:
+        cursor = conn.cursor()
+
         query = "SELECT * FROM `category`"
         cursor.execute(query)
         result = cursor.fetchall()
@@ -52,6 +53,8 @@ def get_category():
 @app.route("/GetCategoryMagazine", methods=["POST"])
 def get_category_magazine():
     try:
+        cursor = conn.cursor()
+
         data = request.json
         category_ID = data["categoryId"]
         query = f"SELECT * FROM `magazine` WHERE `category_ID`={category_ID};"
@@ -147,6 +150,7 @@ def get_data_magazine():
         data = request.json
         index = {}
         MAG_ID = data["magId"]
+        cursor = conn.cursor()
 
         query0 = f"SELECT * FROM `magazine` WHERE `ID`={MAG_ID};"
         cursor.execute(query0)
