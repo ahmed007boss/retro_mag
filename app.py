@@ -130,11 +130,11 @@ def get_all_magazine():
                 merged_df2 = pd.merge(five_df, category_df, left_on='category_ID', right_on='ID', suffixes=('_magazine', '_category'))
 
                 magazine_data = {
-                "ID": str(merged_df2.loc[0]["ID_magazine"]),
+                "ID": int(merged_df2.loc[0]["ID_magazine"]),
                 "NAME": merged_df2.loc[0]["NAME"],
                 "Headline": merged_df2.loc[0]["Headline"],
                 "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
-                ,"CategoryId":merged_df2.loc[0]['category_ID']
+                ,"CategoryId":int(merged_df2.loc[0]['category_ID'])
                 }
                 listofdata.append(magazine_data)
                 result["LatestFiveMagazines"]=listofdata
