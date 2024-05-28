@@ -134,7 +134,7 @@ def get_all_magazine():
                 "NAME": merged_df2.loc[0]["NAME"],
                 "Headline": merged_df2.loc[0]["Headline"],
                 "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
-                ,"Category_ID":merged_df2.loc[0]['category_ID']
+                ,"CategoryID":merged_df2.loc[0]['category_ID']
                 }
                 listofdata.append(magazine_data)
                 result["LatestFiveMagazines"]=listofdata
