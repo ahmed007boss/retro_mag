@@ -132,8 +132,9 @@ def get_all_magazine():
                 "ImageUrl": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
                 }
                 listofdata.append(magazine_data)
+                result["LatestFiveMagazines"]=listofdata
 
-            processed_data = {"Model": result,"LatestFiveMagazines":listofdata}
+            processed_data = {"Model": result}
             return jsonify(processed_data)
     except Exception as e:
         return jsonify({"error": str(e)})
