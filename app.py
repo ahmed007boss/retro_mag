@@ -6,7 +6,7 @@ import os
 
 app = Flask(__name__)
 CORS(app)
-
+print("HI")
 # Define the connection parameters
 config = {
     'user': 'avnadmin',
