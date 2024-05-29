@@ -19,7 +19,6 @@ config = {
     'ssl_ca': 'ca-cert.pem',  # Path to the SSL CA certificate
     'ssl_verify_cert': True  # Verify the server certificate
 }
-conn = mysql.connector.connect(**config)
 
 @app.route("/")
 def root():
@@ -38,8 +37,8 @@ def images(filename):
 @app.route("/get_category", methods=["GET"])
 def get_category():
     try:
+        conn = mysql.connector.connect(**config)
         cursor = conn.cursor()
-
         query = "SELECT * FROM `category`"
         cursor.execute(query)
         result = cursor.fetchall()
@@ -53,8 +52,9 @@ def get_category():
 @app.route("/GetCategoryMagazine", methods=["POST"])
 def get_category_magazine():
     try:
-        cursor = conn.cursor()
+        conn = mysql.connector.connect(**config)
 
+        cursor = conn.cursor()
         data = request.json
         category_ID = data["categoryId"]
         query = f"SELECT * FROM `magazine` WHERE `category_ID`={category_ID};"
@@ -62,7 +62,7 @@ def get_category_magazine():
         result = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         df = pd.DataFrame(result, columns=columns)
-        data = df[["ID", "NAME", "Headline", "category_ID"]]
+        data = df[["ID", "Headline", "category_ID"]]
         data["Image"] = ""
 
         for i in range(len(df)):
@@ -80,6 +80,9 @@ def get_category_magazine():
         return jsonify({"error": str(e)})
 
 def fetch_data(cursor, query):
+    conn = mysql.connector.connect(**config)
+
+    cursor = conn.cursor()
     cursor.execute(query)
     columns = [desc[0] for desc in cursor.description]
     result = cursor.fetchall()
@@ -87,6 +90,9 @@ def fetch_data(cursor, query):
     return df
 
 def fetch_image_url(cursor, image_id):
+    conn = mysql.connector.connect(**config)
+
+    cursor = conn.cursor()
     query = f"SELECT image_url FROM `image` WHERE `ID`={image_id}"
     cursor.execute(query)
     result = cursor.fetchone()
@@ -97,6 +103,8 @@ def fetch_image_url(cursor, image_id):
 @app.route("/GetALLMagazine", methods=["GET"])
 def get_all_magazine():
     try:
+        conn = mysql.connector.connect(**config)
+
         with conn.cursor() as cursor:
             magazine_query = "SELECT * FROM `magazine`;"
             magazine_df = fetch_data(cursor, magazine_query)
@@ -111,7 +119,7 @@ def get_all_magazine():
                 category_name = row['Name']
                 magazine_info = {
                     "ID": row['ID_magazine'],
-                    "NAME": row['NAME'],
+                    # "NAME": row['NAME'],
                     "Headline": row['Headline'],
                     "Image": fetch_image_url(cursor, row['Image_ID'])
                 }
@@ -131,7 +139,7 @@ def get_all_magazine():
 
                 magazine_data = {
                 "ID": int(merged_df2.loc[0]["ID_magazine"]),
-                "NAME": merged_df2.loc[0]["NAME"],
+                # "NAME": merged_df2.loc[0]["NAME"],
                 "Headline": merged_df2.loc[0]["Headline"],
                 "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
                 ,"CategoryId":int(merged_df2.loc[0]['category_ID'])
@@ -147,10 +155,13 @@ def get_all_magazine():
 @app.route("/GetDataMagazine", methods=["POST"])
 def get_data_magazine():
     try:
+        conn = mysql.connector.connect(**config)
+
+        cursor = conn.cursor()
+
         data = request.json
         index = {}
         MAG_ID = data["magId"]
-        cursor = conn.cursor()
 
         query0 = f"SELECT * FROM `magazine` WHERE `ID`={MAG_ID};"
         cursor.execute(query0)
@@ -185,7 +196,7 @@ def get_data_magazine():
         videos = [{"VideoUrl": "https://retromagapi.azurewebsites.net/images" + dt["video_url"]} for _, dt in df3.iterrows()]
         index["Videos"] = videos
         index["Headline"] = df0.loc[0].Headline
-        index["Name"] = df0.loc[0].NAME
+        # index["Name"] = df0.loc[0].NAME
 
         processed_data = {"Model": index}
         return jsonify(processed_data)
@@ -237,6 +248,6 @@ def get_data_magazine():
 #     except Exception as e:
 #         return jsonify({"error": str(e)})
 
-print("hi")
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
