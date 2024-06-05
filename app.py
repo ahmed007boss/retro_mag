@@ -403,8 +403,8 @@ def get_AddMagazine():
         cursor.close()
         conn.close()
       
-@app.route("/EditMagazine", methods=["GET"])
-def get_EditMagazine():
+@app.route("/GetAllMagazines", methods=["GET"])
+def GetAllMagazines():
     try:
         conn = mysql.connector.connect(**config)
 
@@ -416,8 +416,8 @@ def get_EditMagazine():
             listofdata = []
             for _, row in magazine_df.iterrows():
                 magazine_info = {
-                    "ID": row['ID'],
-                    "CategoryID": row['category_ID'],
+                    "Id": row['ID'],
+                    "CategoryId": row['category_ID'],
                     "Headline": row['Headline']
                 }
                 listofdata.append(magazine_info)
@@ -433,4 +433,4 @@ def get_EditMagazine():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0", port=80)
