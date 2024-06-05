@@ -403,7 +403,7 @@ def get_AddMagazine():
         cursor.close()
         conn.close()
       
-@app.route("/GetAllMagazines", methods=["GET"])
+@app.route("/GetAllMagazinesWithCategories", methods=["GET"])
 def GetAllMagazines():
     try:
         conn = mysql.connector.connect(**config)
@@ -416,20 +416,44 @@ def GetAllMagazines():
             listofdata = []
             for _, row in magazine_df.iterrows():
                 magazine_info = {
-                    "Id": row['ID'],
+                    "MagazineId": row['ID'],
                     "CategoryId": row['category_ID'],
                     "Headline": row['Headline']
                 }
                 listofdata.append(magazine_info)
                 
 
-            processed_data = {"Model": listofdata}
+            processed_data = {"ModelList": listofdata}
             return jsonify(processed_data)
     except Exception as e:
         return jsonify({"error": str(e)})     
 
+@app.route("/DeleteMagazine", methods=["POST"])
+def DeleteMagazines():
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+        data = request.json
+        ID = data["MagazineId"]
+        path = f"./IMAGE/{ID}"
 
+# Remove the directory and its contents
+        try:
+            shutil.rmtree(path)
+            cursor.execute("DELETE FROM magazine WHERE ID ={}".format(ID))
+            conn.commit()
+            cursor.execute("DELETE FROM context WHERE MAG_ID ={}".format(ID))
+            conn.commit()
+            cursor.execute("DELETE FROM image WHERE MAG_ID ={}".format(ID))
+            conn.commit()
+            cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
+            conn.commit()
+            return jsonify({"ResultMessege": "Magazine Deleted successfully"})
+        except OSError as e:
+                return jsonify({"error": str(e)})     
 
+    except Exception as e:
+        return jsonify({"error": str(e)})     
 
 
 if __name__ == "__main__":
