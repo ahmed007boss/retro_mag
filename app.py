@@ -14,23 +14,23 @@ app = Flask(__name__)
 CORS(app)
 
 # Define the connection parameters
-# config = {
-#     'user': 'avnadmin',
-#     'password': 'AVNS_9E9kqttyyPwEk-U3Hpg',
-#     'host': 'mysql-6ae2b8d-ahmed-f254.l.aivencloud.com',
-#     'database': 'defaultdb',
-#     'port': 23655,
-#     'charset': 'utf8mb4',
-#     'connect_timeout': 10,
-#     'ssl_ca': 'ca-cert.pem',  # Path to the SSL CA certificate
-#     'ssl_verify_cert': True  # Verify the server certificate
-# }
 config = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': '',
-    'database': 'retro_mag'
+    'user': 'avnadmin',
+    'password': 'AVNS_9E9kqttyyPwEk-U3Hpg',
+    'host': 'mysql-6ae2b8d-ahmed-f254.l.aivencloud.com',
+    'database': 'defaultdb',
+    'port': 23655,
+    'charset': 'utf8mb4',
+    'connect_timeout': 10,
+    'ssl_ca': 'ca-cert.pem',  # Path to the SSL CA certificate
+    'ssl_verify_cert': True  # Verify the server certificate
 }
+# config = {
+#     'host': '127.0.0.1',
+#     'user': 'root',
+#     'password': '',
+#     'database': 'retro_mag'
+# }
 @app.route("/")
 def root():
     return render_template_string("""
@@ -83,7 +83,7 @@ def get_category_magazine():
             result1 = cursor.fetchall()
             columns = [desc[0] for desc in cursor.description]
             df1 = pd.DataFrame(result1, columns=columns)
-            data["Image"].iloc[i] = "http://10.5.50.193:8080/images" + df1["image_url"].iloc[0]
+            data["Image"].iloc[i] = "https://retromagapi.azurewebsites.net/images" + df1["image_url"].iloc[0]
 
         processed_data = {"Magazines": data.to_dict(orient='records')}
         return jsonify(processed_data)
@@ -108,7 +108,7 @@ def fetch_image_url(cursor, image_id):
     cursor.execute(query)
     result = cursor.fetchone()
     if result:
-        return "http://10.5.50.193:8080/images" + result[0]
+        return "https://retromagapi.azurewebsites.net/images" + result[0]
     return None
 
 @app.route("/GetALLMagazine", methods=["GET"])
@@ -152,7 +152,7 @@ def get_all_magazine():
                 "ID": int(merged_df2.loc[0]["ID_magazine"]),
                 # "NAME": merged_df2.loc[0]["NAME"],
                 "Headline": merged_df2.loc[0]["Headline"],
-                "Image": f"http://10.5.50.193:8080/images{image_df.loc[0]['image_url']}"
+                "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
                 ,"CategoryId":int(merged_df2.loc[0]['category_ID'])
                 }
                 listofdata.append(magazine_data)
@@ -201,10 +201,10 @@ def get_data_magazine():
         context = [{"ID": dt["ID"], "Paragraph": dt["Context"]} for _, dt in df.iterrows()]
         index["Context"] = context
 
-        images = [{"ID": dt["ID"], "ContextID": dt["context_id"], "ImageUrl": "http://10.5.50.193:8080/images" + dt["image_url"]} for _, dt in df2.iterrows()]
+        images = [{"ID": dt["ID"], "ContextID": dt["context_id"], "ImageUrl": "https://retromagapi.azurewebsites.net/images" + dt["image_url"]} for _, dt in df2.iterrows()]
         index["Images"] = images
 
-        videos = [{"VideoUrl": "http://10.5.50.193:8080/images" + dt["video_url"]} for _, dt in df3.iterrows()]
+        videos = [{"VideoUrl": "https://retromagapi.azurewebsites.net/images" + dt["video_url"]} for _, dt in df3.iterrows()]
         index["Videos"] = videos
         index["Headline"] = df0.loc[0].Headline
         # index["Name"] = df0.loc[0].NAME
@@ -247,7 +247,7 @@ def get_data_magazine():
 #                 "ID": str(df3.loc[0]["ID"]),
 #                 "NAME": df3.loc[0]["NAME"],
 #                 "Headline": df3.loc[0]["Headline"],
-#                 "ImageUrl": f"http://10.5.50.193:8080/images{df2.loc[0]['image_url']}"
+#                 "ImageUrl": f"https://retromagapi.azurewebsites.net/images{df2.loc[0]['image_url']}"
 #             }
 
 #             listofdata.append(magazine_data)
