@@ -450,6 +450,15 @@ def DeleteMagazines():
             conn.commit()
             return jsonify({"ResultMessege": "Magazine Deleted successfully"})
         except OSError as e:
+                cursor.execute("DELETE FROM magazine WHERE ID ={}".format(ID))
+                conn.commit()
+                cursor.execute("DELETE FROM context WHERE MAG_ID ={}".format(ID))
+                conn.commit()
+                cursor.execute("DELETE FROM image WHERE MAG_ID ={}".format(ID))
+                conn.commit()
+                cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
+                conn.commit()
+                return jsonify({"ResultMessege": "Magazine Deleted successfully"})
                 return jsonify({"error": str(e)})     
 
     except Exception as e:
