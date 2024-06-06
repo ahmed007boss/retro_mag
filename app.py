@@ -14,23 +14,23 @@ app = Flask(__name__)
 CORS(app)
 
 # Define the connection parameters
-# config = {
-#     'user': 'avnadmin',
-#     'password': 'AVNS_9E9kqttyyPwEk-U3Hpg',
-#     'host': 'mysql-6ae2b8d-ahmed-f254.l.aivencloud.com',
-#     'database': 'defaultdb',
-#     'port': 23655,
-#     'charset': 'utf8mb4',
-#     'connect_timeout': 10,
-#     'ssl_ca': 'ca-cert.pem',  # Path to the SSL CA certificate
-#     'ssl_verify_cert': True  # Verify the server certificate
-# }
 config = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': '',
-    'database': 'retro_mag'
+    'user': 'avnadmin',
+    'password': 'AVNS_9E9kqttyyPwEk-U3Hpg',
+    'host': 'mysql-6ae2b8d-ahmed-f254.l.aivencloud.com',
+    'database': 'defaultdb',
+    'port': 23655,
+    'charset': 'utf8mb4',
+    'connect_timeout': 10,
+    'ssl_ca': 'ca-cert.pem',  # Path to the SSL CA certificate
+    'ssl_verify_cert': True  # Verify the server certificate
 }
+# config = {
+#     'host': '127.0.0.1',
+#     'user': 'root',
+#     'password': '',
+#     'database': 'retro_mag'
+# }
 @app.route("/")
 def root():
     return render_template_string("""
@@ -325,6 +325,16 @@ def get_AddMagazine():
         entries_list = [item.split(".")[0] for item in tab_data_keys if 'Entries' in item]
         files_list = [item.split(".")[0] for item in datafiles_list_keys if 'Entries' in item]
 
+        imagepath = []
+        imageParagraph = []
+
+        for entry in entries_list:
+            if entry in files_list:
+                photo = datafiles[f"{entry}.photo"]
+                imagepath.append(save_file(photo, new_folder_path))
+            else:
+                imagepath.append("")
+            imageParagraph.append(tab_data[f"{entry}.Paragraph"])
 
         cursor.execute("SELECT ID FROM image ORDER BY ID DESC LIMIT 1")
         last_image_id = cursor.fetchone()
@@ -352,6 +362,7 @@ def get_AddMagazine():
             last_videos_id = cursor.fetchone()
             videos_ID = 1 if not last_videos_id else last_videos_id[0] + 1
             UrlVideo=tab_data["UrlVideo"]
+            # UrlVideo.replace("https://youtu.be/","https://www.youtube.com/embed/")
             Paragraph=tab_data["VideoParagraph"]
             query = """
                 INSERT INTO context (ID, MAG_ID, Context)
@@ -373,20 +384,9 @@ def get_AddMagazine():
             conn.commit()
             return jsonify({"ResultMessege": "Magazine added successfully"})
 
-        
+
 
         Paragraph_ID = []
-        imagepath = []
-        imageParagraph = []
-
-        for entry in entries_list:
-            if entry in files_list:
-                photo = datafiles[f"{entry}.photo"]
-                imagepath.append(save_file(photo, new_folder_path))
-            else:
-                imagepath.append("")
-            imageParagraph.append(tab_data[f"{entry}.Paragraph"])
-
 
         for paragraph in imageParagraph:
             if paragraph!="":
@@ -486,6 +486,7 @@ def DeleteMagazines():
             cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
             conn.commit()
             return jsonify({"ResultMessege": "Magazine Deleted successfully"})
+                # return jsonify({"error": str(e)})     
 
     except Exception as e:
         return jsonify({"error": str(e)})     
