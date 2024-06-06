@@ -325,16 +325,6 @@ def get_AddMagazine():
         entries_list = [item.split(".")[0] for item in tab_data_keys if 'Entries' in item]
         files_list = [item.split(".")[0] for item in datafiles_list_keys if 'Entries' in item]
 
-        imagepath = []
-        imageParagraph = []
-
-        for entry in entries_list:
-            if entry in files_list:
-                photo = datafiles[f"{entry}.photo"]
-                imagepath.append(save_file(photo, new_folder_path))
-            else:
-                imagepath.append("")
-            imageParagraph.append(tab_data[f"{entry}.Paragraph"])
 
         cursor.execute("SELECT ID FROM image ORDER BY ID DESC LIMIT 1")
         last_image_id = cursor.fetchone()
@@ -362,7 +352,6 @@ def get_AddMagazine():
             last_videos_id = cursor.fetchone()
             videos_ID = 1 if not last_videos_id else last_videos_id[0] + 1
             UrlVideo=tab_data["UrlVideo"]
-            # UrlVideo.replace("https://youtu.be/","https://www.youtube.com/embed/")
             Paragraph=tab_data["VideoParagraph"]
             query = """
                 INSERT INTO context (ID, MAG_ID, Context)
@@ -384,9 +373,20 @@ def get_AddMagazine():
             conn.commit()
             return jsonify({"ResultMessege": "Magazine added successfully"})
 
-
+        
 
         Paragraph_ID = []
+        imagepath = []
+        imageParagraph = []
+
+        for entry in entries_list:
+            if entry in files_list:
+                photo = datafiles[f"{entry}.photo"]
+                imagepath.append(save_file(photo, new_folder_path))
+            else:
+                imagepath.append("")
+            imageParagraph.append(tab_data[f"{entry}.Paragraph"])
+
 
         for paragraph in imageParagraph:
             if paragraph!="":
@@ -486,7 +486,6 @@ def DeleteMagazines():
             cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
             conn.commit()
             return jsonify({"ResultMessege": "Magazine Deleted successfully"})
-                # return jsonify({"error": str(e)})     
 
     except Exception as e:
         return jsonify({"error": str(e)})     
@@ -495,4 +494,4 @@ def DeleteMagazines():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0", port=80)
