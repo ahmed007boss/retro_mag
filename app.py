@@ -461,7 +461,7 @@ def DeleteMagazines():
         conn = mysql.connector.connect(**config)
         cursor = conn.cursor()
         data = request.json
-        ID = data["MagazineId"]
+        ID = data["magazineId"]
         path = f"./IMAGE/{ID}"
 
 # Remove the directory and its contents
