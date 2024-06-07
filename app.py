@@ -130,7 +130,7 @@ def get_all_magazine():
                 category_name = row['Name']
                 magazine_info = {
                     "ID": row['ID_magazine'],
-                    "author": row['author'],
+                    "AuthorName": row['author_magazine'],
                     "Headline": row['Headline'],
                     "Image": fetch_image_url(cursor, row['Image_ID'])
                 }
@@ -150,7 +150,7 @@ def get_all_magazine():
 
                 magazine_data = {
                 "ID": int(merged_df2.loc[0]["ID_magazine"]),
-                "AuthorName": merged_df2.loc[0]["author"],
+                "AuthorName": merged_df2.loc[0]["author_magazine"],
                 "Headline": merged_df2.loc[0]["Headline"],
                 "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
                 ,"CategoryId":int(merged_df2.loc[0]['category_ID'])
@@ -418,7 +418,7 @@ def get_AddMagazine():
         conn.close()
 
 @app.route("/GetAllMagazinesWithCategories", methods=["GET"])
-def GetAllMagazines():
+def GetAllMagazinesWithCategories():
     try:
         conn = mysql.connector.connect(**config)
 
