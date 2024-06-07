@@ -150,7 +150,7 @@ def get_all_magazine():
 
                 magazine_data = {
                 "ID": int(merged_df2.loc[0]["ID_magazine"]),
-                "AuthorName": merged_df2.loc[0]["author_magazine"],
+                "AuthorName": merged_df2.loc[0]["author"],
                 "Headline": merged_df2.loc[0]["Headline"],
                 "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
                 ,"CategoryId":int(merged_df2.loc[0]['category_ID'])
