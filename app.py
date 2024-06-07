@@ -130,7 +130,7 @@ def get_all_magazine():
                 category_name = row['Name']
                 magazine_info = {
                     "ID": row['ID_magazine'],
-                    "AuthorName": row['author_magazine'],
+                    "AuthorName": row['author'],
                     "Headline": row['Headline'],
                     "Image": fetch_image_url(cursor, row['Image_ID'])
                 }
