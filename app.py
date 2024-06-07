@@ -73,7 +73,7 @@ def get_category_magazine():
         result = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         df = pd.DataFrame(result, columns=columns)
-        data = df[["ID", "Headline", "category_ID"]]
+        data = df[["ID", "Headline", "category_ID","author"]]
         data["Image"] = ""
 
         for i in range(len(df)):
@@ -130,7 +130,7 @@ def get_all_magazine():
                 category_name = row['Name']
                 magazine_info = {
                     "ID": row['ID_magazine'],
-                    # "NAME": row['NAME'],
+                    "author": row['author'],
                     "Headline": row['Headline'],
                     "Image": fetch_image_url(cursor, row['Image_ID'])
                 }
@@ -150,7 +150,7 @@ def get_all_magazine():
 
                 magazine_data = {
                 "ID": int(merged_df2.loc[0]["ID_magazine"]),
-                # "NAME": merged_df2.loc[0]["NAME"],
+                "AuthorName": merged_df2.loc[0]["author"],
                 "Headline": merged_df2.loc[0]["Headline"],
                 "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
                 ,"CategoryId":int(merged_df2.loc[0]['category_ID'])
@@ -207,7 +207,7 @@ def get_data_magazine():
         videos = [{"VideoUrl": dt["video_url"]} for _, dt in df3.iterrows()]
         index["Videos"] = videos
         index["Headline"] = df0.loc[0].Headline
-        # index["Name"] = df0.loc[0].NAME
+        index["AuthorName"] = df0.loc[0].author
 
         processed_data = {"Model": index}
         return jsonify(processed_data)
@@ -317,16 +317,17 @@ def get_AddMagazine():
         coverphoto_path = save_file(coverphoto, new_folder_path)
 
         MagazineHeadLine = tab_data["FirstMagazineHeadLine"] if IsIncludeVideo == 0 else tab_data["SecMagazineHeadLine"]
+        author = tab_data["AuthorName"]
         cursor.execute("SELECT ID FROM image ORDER BY ID DESC LIMIT 1")
         last_image_id = cursor.fetchone()
         IMAGE_ID = 1 if not last_image_id else last_image_id[0] + 1
 
         # Insert into magazine table
         query = """
-        INSERT INTO magazine (ID, Headline, category_ID, Image_ID)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO magazine (ID, Headline, category_ID, Image_ID,author)
+        VALUES (%s, %s, %s, %s,%s)
         """
-        cursor.execute(query, (ID, MagazineHeadLine, CategoryId, IMAGE_ID))
+        cursor.execute(query, (ID, MagazineHeadLine, CategoryId, IMAGE_ID,author))
         conn.commit()
 
         # Insert cover photo into image table
@@ -431,7 +432,8 @@ def GetAllMagazines():
                 magazine_info = {
                     "MagazineId": row['ID'],
                     "CategoryId": row['category_ID'],
-                    "Headline": row['Headline']
+                    "Headline": row['Headline'],
+                    "AuthorName": row['author']
                 }
                 listofdata.append(magazine_info)
                 
