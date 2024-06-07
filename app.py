@@ -74,6 +74,8 @@ def get_category_magazine():
         columns = [desc[0] for desc in cursor.description]
         df = pd.DataFrame(result, columns=columns)
         data = df[["ID", "Headline", "category_ID","author"]]
+        data.rename(columns={'author': 'AuthorName'}, inplace=True)
+
         data["Image"] = ""
 
         for i in range(len(df)):
