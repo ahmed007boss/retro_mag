@@ -8,7 +8,7 @@ from glob import glob
 import json
 import shutil
 import urllib.parse
-
+from glob import glob
 
 app = Flask(__name__)
 CORS(app)
@@ -481,6 +481,10 @@ def DeleteMagazines():
     except Exception as e:
         return jsonify({"error": str(e)})     
 
+@app.route("/showfolder", methods=["GET"])
+def showfolder():
+    image=glob("./IMAGE/*/*")
+    return {"data":image}
 
 
 
