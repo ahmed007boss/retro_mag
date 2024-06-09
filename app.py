@@ -399,7 +399,7 @@ def get_AddMagazine():
             Paragraph_ID = []
 
             for paragraph in imageParagraph:
-                if paragraph:
+                if paragraph != "" and paragraph != None:
                     query = """
                     INSERT INTO context (ID, MAG_ID, Context)
                     VALUES (%s, %s, %s)
