@@ -414,7 +414,7 @@ def get_AddMagazine():
             for i in range(len(imagepath)):
                 if imagepath[i]:
                     IMAGE_ID += 1
-                    context_id = Paragraph_ID[i] if Paragraph_ID[i] != 0 else next((num for num in Paragraph_ID[i:] if num != 0), None)
+                    context_id = Paragraph_ID[i] if Paragraph_ID[i] != 0 else next((num for num in Paragraph_ID[i:] if num != 0), 0)
                     query = """
                     INSERT INTO image (ID, MAG_ID, context_id, image_url)
                     VALUES (%s, %s, %s, %s)
