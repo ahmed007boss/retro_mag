@@ -532,6 +532,7 @@ def ShowEditMagazine():
         videos = [{"VideoUrl": dt["video_url"]} for _, dt in df3.iterrows()]
         index["Videos"] = videos
         index["Headline"] = df0.loc[0].Headline
+        index["CategoryID"] = int(df0.loc[0].category_ID)
 
         IsIncludeVideo=0
         if len(videos)!=0:
