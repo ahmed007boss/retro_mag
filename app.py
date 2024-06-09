@@ -119,52 +119,68 @@ def get_all_magazine():
         conn = mysql.connector.connect(**config)
 
         with conn.cursor() as cursor:
-            magazine_query = "SELECT * FROM `magazine`;"
-            magazine_df = fetch_data(cursor, magazine_query)
+            # Fetch all necessary data in one query
+            query = """
+            SELECT m.ID AS magazine_ID, m.author, m.Headline, m.Image_ID, m.category_ID,
+            c.ID AS category_ID, c.Name AS category_name
+            FROM magazine m
+            INNER JOIN category c ON m.category_ID = c.ID;
+            """
+            df = fetch_data(cursor, query)
 
-            category_query = "SELECT * FROM `category`;"
-            category_df = fetch_data(cursor, category_query)
-
-            merged_df = pd.merge(magazine_df, category_df, left_on='category_ID', right_on='ID', suffixes=('_magazine', '_category'))
-
+            # Fetch image URLs for all magazines at once
+            image_ids = df['Image_ID'].tolist()
+            image_query = f"SELECT ID, image_url FROM image WHERE ID IN ({','.join(map(str, image_ids))});"
+            image_df = fetch_data(cursor, image_query)
+            image_mapping = dict(zip(image_df['ID'], image_df['image_url']))
+            
             result = {}
-            for _, row in merged_df.iterrows():
-                category_name = row['Name']
+            for _, row in df.iterrows():
+                category_name = row['category_name']
+                # print("dddd")
+                # print(row['category_ID'][0])
                 magazine_info = {
-                    "ID": row['ID_magazine'],
+                    "ID": row['magazine_ID'],
                     "AuthorName": row['author'],
                     "Headline": row['Headline'],
-                    "Image": fetch_image_url(cursor, row['Image_ID'])
+                    "Image": f"https://retromagapi.azurewebsites.net/images{image_mapping[row['Image_ID']]}",
+                    "CategoryId": row['category_ID'][0]
                 }
                 if category_name in result:
                     result[category_name].append(magazine_info)
                 else:
                     result[category_name] = [magazine_info]
-            query_latest = "SELECT * FROM latestFiveMagazines;"
-            latest_df = fetch_data(cursor, query_latest)
+
+            # Fetch latest five magazines
+            latest_query = "SELECT MAG_ID FROM latestFiveMagazines;"
+            latest_df = fetch_data(cursor, latest_query)
+            latest_magazine_ids = latest_df['MAG_ID'].tolist()
+            latest_query = f"""
+            SELECT m.ID AS magazine_ID, m.author, m.Headline, m.Image_ID, m.category_ID
+            FROM magazine m
+            WHERE m.ID IN ({','.join(map(str, latest_magazine_ids))});
+            """
+            latest_df = fetch_data(cursor, latest_query)
+
             listofdata = []
             for _, row in latest_df.iterrows():
-                query3 = f"SELECT * FROM magazine WHERE ID={row['MAG_ID']};"
-                five_df = fetch_data(cursor, query3)
-                query2 = f"SELECT * FROM image WHERE ID={five_df.loc[0]['Image_ID']};"
-                image_df = fetch_data(cursor, query2)
-                merged_df2 = pd.merge(five_df, category_df, left_on='category_ID', right_on='ID', suffixes=('_magazine', '_category'))
-
+                # print(row["magazine_ID"])
                 magazine_data = {
-                "ID": int(merged_df2.loc[0]["ID_magazine"]),
-                "AuthorName": merged_df2.loc[0]["author"],
-                "Headline": merged_df2.loc[0]["Headline"],
-                "Image": f"https://retromagapi.azurewebsites.net/images{image_df.loc[0]['image_url']}"
-                ,"CategoryId":int(merged_df2.loc[0]['category_ID'])
+                    "ID": int(row["magazine_ID"]),
+                    "AuthorName": row["author"],
+                    "Headline": row["Headline"],
+                    "Image": f"https://retromagapi.azurewebsites.net/images{image_mapping[row['Image_ID']]}",
+                    "CategoryId": int(row['category_ID'])
                 }
                 listofdata.append(magazine_data)
-                result["LatestFiveMagazines"]=listofdata
+
+            result["LatestFiveMagazines"] = listofdata
 
             processed_data = {"Model": result}
+            # print(processed_data)
             return jsonify(processed_data)
     except Exception as e:
         return jsonify({"error": str(e)})
-
 @app.route("/GetDataMagazine", methods=["POST"])
 def get_data_magazine():
     try:
@@ -309,8 +325,8 @@ def get_AddMagazine():
 
         tab_data = request.form
         datafiles = request.files
-        print(datafiles)
-        print(tab_data)
+        # print(datafiles)
+        # print(tab_data)
 
         CategoryId = int(tab_data["CategoryId"])
         IsIncludeVideo = int(tab_data["IsIncludeVideo"])
@@ -366,7 +382,7 @@ def get_AddMagazine():
 
             return jsonify({"ResultMessege": "Magazine added successfully"})
         else:
-            print("hi")
+            # print("hi")
             entries_list = [item.split(".")[0] for item in tab_data if 'Entries' in item]
             files_list = [item.split(".")[0] for item in datafiles if 'Entries' in item]
 
