@@ -486,7 +486,62 @@ def showfolder():
     image=glob("./IMAGE/*/*")
     return {"data":image}
 
+@app.route("/ShowEditMagazine", methods=["POST"])
+def ShowEditMagazine():
 
+    try:
+        conn = mysql.connector.connect(**config)
+
+        cursor = conn.cursor()
+
+        data = request.json
+        index = {}
+        MAG_ID = data["magId"]
+
+        query0 = f"SELECT * FROM `magazine` WHERE `ID`={MAG_ID};"
+        cursor.execute(query0)
+        result0 = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df0 = pd.DataFrame(result0, columns=columns)
+        index["AuthorName"] = df0.loc[0].author
+        index["ID"] = int(df0.loc[0].ID)
+        query = f"SELECT * FROM `context` WHERE `MAG_ID`={MAG_ID};"
+        cursor.execute(query)
+        result = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(result, columns=columns)
+
+        query2 = f"SELECT * FROM `image` WHERE `MAG_ID` = {MAG_ID}"
+        cursor.execute(query2)
+        result2 = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df2 = pd.DataFrame(result2, columns=columns)
+
+        query3 = f"SELECT * FROM `videos` WHERE `MAG_ID`={MAG_ID};"
+        cursor.execute(query3)
+        result3 = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df3 = pd.DataFrame(result3, columns=columns)
+
+        context = [{"ID": dt["ID"], "Paragraph": dt["Context"]} for _, dt in df.iterrows()]
+        index["Context"] = context
+
+        images = [{"ID": dt["ID"], "ContextID": dt["context_id"],"ImageUrl": "https://retromagapi.azurewebsites.net/images" + dt["image_url"]} for _, dt in df2.iterrows()]
+        index["Images"] = images
+
+        videos = [{"VideoUrl": dt["video_url"]} for _, dt in df3.iterrows()]
+        index["Videos"] = videos
+        index["Headline"] = df0.loc[0].Headline
+
+        IsIncludeVideo=0
+        if len(videos)!=0:
+            IsIncludeVideo=1
+        index["IsIncludeVideo"]=IsIncludeVideo
+
+        processed_data = {"Model": index}
+        return jsonify(processed_data)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
