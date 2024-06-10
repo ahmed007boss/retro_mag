@@ -688,7 +688,8 @@ def EditOnMagazine():
         return jsonify({"ResultMessege": "Error in updated magazine", "error": f"Folder '{new_folder_path}' already exists."})
 
     except Exception as e:
-        print(e)
+        # print(e)
         return jsonify({"ResultMessege": "Error in updated magazine", "error": str(e)})  
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
