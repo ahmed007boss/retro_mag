@@ -654,7 +654,7 @@ def EditOnMagazine():
                     imagepath.append(save_file(photo, new_folder_path))
                 else:
                     imagepath.append("")
-                imageParagraph.append(tab_data[f"{entry}.Paragraph"])
+                imageParagraph.append(tab_data[f"{"Entries[{}]".format(entry)}.Paragraph"])
 
             Paragraph_ID = []
 
