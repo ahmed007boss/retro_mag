@@ -650,11 +650,11 @@ def EditOnMagazine():
 
             for entry in range(len(entries_list)):
                 if "Entries[{}]".format(entry) in files_list:
-                    photo = datafiles[f"{"Entries[{}]".format(entry)}.photo"]
+                    photo = datafiles["Entries[{}].photo".format(entry)]
                     imagepath.append(save_file(photo, new_folder_path))
                 else:
                     imagepath.append("")
-                imageParagraph.append(tab_data[f"{"Entries[{}]".format(entry)}.Paragraph"])
+                imageParagraph.append(tab_data["Entries[{}].Paragraph".format(entry)])
 
             Paragraph_ID = []
 
@@ -688,8 +688,7 @@ def EditOnMagazine():
         return jsonify({"ResultMessege": "Error in updated magazine", "error": f"Folder '{new_folder_path}' already exists."})
 
     except Exception as e:
-        # print(e)
+        print(e)
         return jsonify({"ResultMessege": "Error in updated magazine", "error": str(e)})  
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
