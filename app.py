@@ -559,6 +559,136 @@ def ShowEditMagazine():
         return jsonify(processed_data)
     except Exception as e:
         return jsonify({"error": str(e)})
+@app.route("/EditOnMagazine", methods=["POST"])
+def EditOnMagazine():
+    try:
+        datafiles = request.files
+        tab_data = request.form
 
+        coverphoto = datafiles['Coverphoto']
+        ID = int(tab_data["MagazineId"])
+        path = f"./IMAGE/{ID}"
+        CategoryId = int(tab_data["CategoryId"])
+        IsIncludeVideo = int(tab_data["IsIncludeVideo"])
+        AuthorName = tab_data["AuthorName"]
+
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+
+        try:
+            shutil.rmtree(path)
+        except OSError:
+            pass
+
+        cursor.execute("DELETE FROM magazine WHERE ID = %s", (ID,))
+        cursor.execute("DELETE FROM context WHERE MAG_ID = %s", (ID,))
+        cursor.execute("DELETE FROM image WHERE MAG_ID = %s", (ID,))
+        cursor.execute("DELETE FROM videos WHERE MAG_ID = %s", (ID,))
+        conn.commit()
+
+        cursor.execute("SELECT ID FROM magazine ORDER BY ID DESC LIMIT 1")
+        last_id = cursor.fetchone()
+        new_ID = 1 if not last_id else last_id[0] + 1
+        new_folder_path = f"./IMAGE/{new_ID}"
+        os.mkdir(new_folder_path)
+
+        coverphoto_path = save_file(coverphoto, new_folder_path)
+        MagazineHeadLine = tab_data["FirstMagazineHeadLine"] if IsIncludeVideo == 0 else tab_data["SecMagazineHeadLine"]
+
+        cursor.execute("SELECT ID FROM image ORDER BY ID DESC LIMIT 1")
+        last_image_id = cursor.fetchone()
+        IMAGE_ID = 1 if not last_image_id else last_image_id[0] + 1
+
+        query = """
+            INSERT INTO magazine (ID, Headline, category_ID, Image_ID, author)
+            VALUES (%s, %s, %s, %s, %s)
+            """
+        cursor.execute(query, (new_ID, MagazineHeadLine, CategoryId, IMAGE_ID, AuthorName))
+        conn.commit()
+
+        query = """
+            INSERT INTO image (ID, MAG_ID, context_id, image_url)
+            VALUES (%s, %s, %s, %s)
+            """
+        cursor.execute(query, (IMAGE_ID, new_ID, -1, coverphoto_path.replace('./IMAGE', '').replace('\\', '/')))
+        conn.commit()
+
+        cursor.execute("SELECT ID FROM context ORDER BY ID DESC LIMIT 1")
+        last_context_id = cursor.fetchone()
+        context_ID = 1 if not last_context_id else last_context_id[0] + 1
+
+        if IsIncludeVideo == 1:
+            cursor.execute("SELECT ID FROM videos ORDER BY ID DESC LIMIT 1")
+            last_videos_id = cursor.fetchone()
+            videos_ID = 1 if not last_videos_id else last_videos_id[0] + 1
+            UrlVideo = tab_data["UrlVideo"]
+            VideoParagraph = tab_data["VideoParagraph"]
+
+            query = """
+                INSERT INTO context (ID, MAG_ID, Context)
+                VALUES (%s, %s, %s)
+                """
+            cursor.execute(query, (context_ID, new_ID, VideoParagraph))
+            conn.commit()
+
+            query = """
+                INSERT INTO videos (ID, MAG_ID, video_url)
+                VALUES (%s, %s, %s)
+                """
+            cursor.execute(query, (videos_ID, new_ID, UrlVideo))
+            conn.commit()
+
+            return jsonify({"ResultMessege": "Magazine Updated successfully"})
+
+        else:
+            entries_list = [item.split(".")[0] for item in tab_data if 'Entries' in item]
+            files_list = [item.split(".")[0] for item in datafiles if 'Entries' in item]
+            entries_list = list(set(entries_list))
+
+            imagepath = []
+            imageParagraph = []
+
+            for entry in entries_list:
+                if entry in files_list:
+                    photo = datafiles[f"{entry}.photo"]
+                    imagepath.append(save_file(photo, new_folder_path))
+                else:
+                    imagepath.append("")
+                imageParagraph.append(tab_data[f"{entry}.Paragraph"])
+
+            Paragraph_ID = []
+
+            for paragraph in imageParagraph:
+                if paragraph:
+                    query = """
+                        INSERT INTO context (ID, MAG_ID, Context)
+                        VALUES (%s, %s, %s)
+                        """
+                    cursor.execute(query, (context_ID, new_ID, paragraph))
+                    Paragraph_ID.append(context_ID)
+                    context_ID += 1
+                else:
+                    Paragraph_ID.append(0)
+            conn.commit()
+
+            for i in range(len(imagepath)):
+                if imagepath[i]:
+                    IMAGE_ID += 1
+                    context_id = Paragraph_ID[i] if Paragraph_ID[i] != 0 else next((num for num in Paragraph_ID[i:] if num != 0), 0)
+                    query = """
+                        INSERT INTO image (ID, MAG_ID, context_id, image_url)
+                        VALUES (%s, %s, %s, %s)
+                        """
+                    cursor.execute(query, (IMAGE_ID, new_ID, context_id, imagepath[i].replace('./IMAGE', '').replace('\\', '/')))
+            conn.commit()
+
+            return jsonify({"ResultMessege": "Magazine updated successfully"})
+
+    except FileExistsError:
+        return jsonify({"ResultMessege": "Error in updated magazine", "error": f"Folder '{new_folder_path}' already exists."})
+
+    except Exception as e:
+        print(e)
+        return jsonify({"ResultMessege": "Error in updated magazine", "error": str(e)})  
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
