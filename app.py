@@ -648,9 +648,9 @@ def EditOnMagazine():
             imagepath = []
             imageParagraph = []
 
-            for entry in entries_list:
-                if entry in files_list:
-                    photo = datafiles[f"{entry}.photo"]
+            for entry in range(len(entries_list)):
+                if "Entries[{}]".format(entry) in files_list:
+                    photo = datafiles[f"{"Entries[{}]".format(entry)}.photo"]
                     imagepath.append(save_file(photo, new_folder_path))
                 else:
                     imagepath.append("")
