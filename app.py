@@ -586,9 +586,9 @@ def EditOnMagazine():
         cursor.execute("DELETE FROM videos WHERE MAG_ID = %s", (ID,))
         conn.commit()
 
-        cursor.execute("SELECT ID FROM magazine ORDER BY ID DESC LIMIT 1")
-        last_id = cursor.fetchone()
-        new_ID = 1 if not last_id else last_id[0] + 1
+        # cursor.execute("SELECT ID FROM magazine ORDER BY ID DESC LIMIT 1")
+        # last_id = cursor.fetchone()
+        new_ID = ID
         new_folder_path = f"./IMAGE/{new_ID}"
         os.mkdir(new_folder_path)
 
@@ -689,6 +689,6 @@ def EditOnMagazine():
 
     except Exception as e:
         print(e)
-        return jsonify({"ResultMessege": "Error in updated magazine", "error": str(e)})  
+        return jsonify({"ResultMessege": "Error in updated magazine", "error": str(e)})    
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
