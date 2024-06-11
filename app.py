@@ -491,6 +491,10 @@ def DeleteMagazines():
             conn.commit()
             cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
             conn.commit()
+            # cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
+            cursor.execute("DELETE FROM `latestFiveMagazines` WHERE MAG_ID ={}".format(ID))
+
+            conn.commit()
             return jsonify({"ResultMessege": "Magazine Deleted successfully"})
                 # return jsonify({"error": str(e)})     
 
