@@ -875,13 +875,41 @@ def GetDataEvent():
     except Exception as e:
         print(e)
         return jsonify({"ResultMessege": "Error in updated", "error": str(e)})
+@app.route("/GetAllDataEvent", methods=["GET"])
+def GetAllDataEvent():
+    try:
+        conn = mysql.connector.connect(**config)
+
+        cursor = conn.cursor()
+        # data = request.json
+        # EventId = int(data["eventId"])
+        select_query = "SELECT * FROM events"
+        cursor.execute(select_query)
+        records = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(records, columns=columns)
+        df.rename(columns={'AUTHOR': 'AuthorName'}, inplace=True)
+        df.rename(columns={'NAME': 'HeadLine'}, inplace=True)
+        df.rename(columns={'DATE':'EventDate'}, inplace=True)
+        df.rename(columns={'LOCATION':'Location'}, inplace=True)
+        df.rename(columns={'DESCRIPTION':'Paragraph'}, inplace=True)
+        df.rename(columns={'IMAGE_PATH':'Image'}, inplace=True)
+        df.rename(columns={'ID':'EventId'}, inplace=True)
+        df['Image']="https://retromagapi.azurewebsites.net/EVENT"+df['Image']
+        results_json = df.to_json(orient='records')         
+        
+        # Create a dictionary with the desired structure    
+        return {"ModelList":json.loads(results_json)}
+    except Exception as e:
+        print(e)
+        return jsonify({"ResultMessege": "Error in updated", "error": str(e)})
 @app.route("/GetDataEventDelete", methods=["GET"])
 def GetDataEventDelete():
     try:
         conn = mysql.connector.connect(**config)
 
         cursor = conn.cursor()
-        select_query = "SELECT ID,NAME,AUTHOR FROM events"
+        select_query = "SELECT ID,NAME,AUTHOR,DATE,LOCATION FROM events"
         cursor.execute(select_query)
         records = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
@@ -889,10 +917,12 @@ def GetDataEventDelete():
         df.rename(columns={'AUTHOR': 'AuthorName'}, inplace=True)
         df.rename(columns={'NAME': 'HeadLine'}, inplace=True)
         df.rename(columns={'ID':'EventId'}, inplace=True)
+        df.rename(columns={'DATE':'EventDate'}, inplace=True)
+        df.rename(columns={'LOCATION':'Location'}, inplace=True)
         results_json = df.to_json(orient='records')         
         
         # Create a dictionary with the desired structure    
-        return {"Model":json.loads(results_json)}
+        return {"ModelList":json.loads(results_json)}
     except Exception as e:
         print(e)
         return jsonify({"ResultMessege": "Error in updated", "error": str(e)})
