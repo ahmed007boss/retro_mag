@@ -9,6 +9,8 @@ import json
 import shutil
 import urllib.parse
 from glob import glob
+from mysql.connector import Error
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -31,6 +33,41 @@ config = {
 #     'password': '',
 #     'database': 'retro_mag'
 # }
+
+def insert_event(connection,ID, name, date, location, description, image_path, author):
+    cursor = connection.cursor()
+    insert_query = """
+    INSERT INTO events (ID,NAME, DATE, LOCATION, DESCRIPTION, IMAGE_PATH, AUTHOR)
+    VALUES (%s,%s, %s, %s, %s, %s, %s)
+    """
+    record = (ID,name, date, location, description, image_path, author)
+    try:
+        cursor.execute(insert_query, record)
+        connection.commit()
+        return "EVENT inserted successfully"
+    except Error as e:
+        return f"The error '{e}' occurred"
+def delete_event(connection, event_id):
+    cursor = connection.cursor()
+    delete_query = "DELETE FROM events WHERE ID = %s"
+    try:
+        cursor.execute(delete_query, (event_id,))
+        connection.commit()
+        return "Record deleted successfully"
+    except Error as e:
+        return f"The error '{e}' occurred"
+def fetch_all_events(connection):
+    cursor = connection.cursor()
+    select_query = "SELECT * FROM events"
+    try:
+        cursor.execute(select_query)
+        records = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(records, columns=columns)
+        return df
+    except Error as e:
+        print(f"The error '{e}' occurred")
+        return None
 @app.route("/")
 def root():
     return render_template_string("""
@@ -44,6 +81,10 @@ def root():
 @app.route("/images/<path:filename>")
 def images(filename):
     return send_from_directory("IMAGE", filename)
+
+@app.route("/EVENT/<path:filename>")
+def EVENT(filename):
+    return send_from_directory("EVENT", filename)
 
 @app.route("/get_category", methods=["GET"])
 def get_category():
@@ -175,6 +216,19 @@ def get_all_magazine():
                 listofdata.append(magazine_data)
 
             result["LatestFiveMagazines"] = listofdata
+            EVENTDATA=fetch_all_events(conn)
+            EVENTDATA.rename(columns={'AUTHOR': 'AuthorName'}, inplace=True)
+            EVENTDATA.rename(columns={'NAME': 'HeadLine'}, inplace=True)
+            EVENTDATA.rename(columns={'DATE':'EventDate'}, inplace=True)
+            EVENTDATA.rename(columns={'LOCATION':'Location'}, inplace=True)
+            EVENTDATA.rename(columns={'DESCRIPTION':'Paragraph'}, inplace=True)
+            EVENTDATA.rename(columns={'IMAGE_PATH':'Image'}, inplace=True)
+            EVENTDATA.rename(columns={'ID':'EventId'}, inplace=True)
+            EVENTDATA['Image']="https://retromagapi.azurewebsites.net/EVENT"+EVENTDATA['Image']
+            results_json = EVENTDATA.to_json(orient='records')         
+        
+        # Create a dictionary with the desired structure    
+            result["Events"]=json.loads(results_json)
 
             processed_data = {"Model": result}
             # print(processed_data)
@@ -481,10 +535,6 @@ def DeleteMagazines():
             conn.commit()
             cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
             conn.commit()
-            
-            cursor.execute("DELETE FROM `latestFiveMagazines` WHERE MAG_ID ={}".format(ID))
-
-            conn.commit()
             return jsonify({"ResultMessege": "Magazine Deleted successfully"})
         except OSError as e:
             cursor.execute("DELETE FROM magazine WHERE ID ={}".format(ID))
@@ -494,10 +544,6 @@ def DeleteMagazines():
             cursor.execute("DELETE FROM image WHERE MAG_ID ={}".format(ID))
             conn.commit()
             cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
-            conn.commit()
-            # cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
-            cursor.execute("DELETE FROM `latestFiveMagazines` WHERE MAG_ID ={}".format(ID))
-
             conn.commit()
             return jsonify({"ResultMessege": "Magazine Deleted successfully"})
                 # return jsonify({"error": str(e)})     
@@ -594,8 +640,8 @@ def EditOnMagazine():
         cursor.execute("DELETE FROM videos WHERE MAG_ID = %s", (ID,))
         conn.commit()
 
-        # cursor.execute("SELECT ID FROM magazine ORDER BY ID DESC LIMIT 1")
-        # last_id = cursor.fetchone()
+        cursor.execute("SELECT ID FROM magazine ORDER BY ID DESC LIMIT 1")
+        last_id = cursor.fetchone()
         new_ID = ID
         new_folder_path = f"./IMAGE/{new_ID}"
         os.mkdir(new_folder_path)
@@ -697,6 +743,184 @@ def EditOnMagazine():
 
     except Exception as e:
         print(e)
-        return jsonify({"ResultMessege": "Error in updated magazine", "error": str(e)})    
+        return jsonify({"ResultMessege": "Error in updated magazine", "error": str(e)})
+@app.route("/ShowHeadIdMagazine", methods=["GET"])
+def ShowHeadIdMagazine():
+
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+        query = f"SELECT ID,Headline FROM `magazine`"
+        cursor.execute(query)
+        result = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(result, columns=columns)
+        results_json = df.to_json(orient='records')         
+        
+        # Create a dictionary with the desired structure    
+        response_data = {"Model": json.loads(results_json)}
+        return response_data
+
+    
+    except Exception as e:
+        print(e)
+        return jsonify({"ResultMessege": "Error in show data", "error": str(e)})
+    
+# @app.route("/ShowHeadIdMagazine", methods=["GET"])
+# def ShowHeadIdMagazine():
+
+#     try:
+#         conn = mysql.connector.connect(**config)
+#         cursor = conn.cursor()
+#         query = f"SELECT ID,Headline FROM `magazine`"
+#         cursor.execute(query)
+#         result = cursor.fetchall()
+#         columns = [desc[0] for desc in cursor.description]
+#         df = pd.DataFrame(result, columns=columns)
+#         results_json = df.to_json(orient='records')         
+        
+#         # Create a dictionary with the desired structure    
+#         response_data = {"Model": json.loads(results_json)}
+#         return response_data
+    
+#     except Exception as e:
+#         print(e)
+#         return jsonify({"ResultMessege": "Error in show data", "error": str(e)})
+
+@app.route("/EditLatestFiveMagazine", methods=["POST"])
+def EditLatestFiveMagazine():
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+        data = request.json
+        index = []
+        index.append(data["1"])
+        index.append(data["2"])
+        index.append(data["3"])
+        index.append(data["4"])
+        index.append(data["5"])
+        insert_query = """INSERT INTO latestFiveMagazines (ID, MAG_ID) VALUES (%s, %s)"""
+        cursor.execute("DELETE FROM `latestFiveMagazines`")
+        conn.commit()
+        for i in range(len(index)):
+            cursor.execute(insert_query, (int(i+1), int(index[i])))
+        
+        conn.commit()
+        return jsonify({"ResultMessege": "Five Latest Magazine updated successfully"})
+    except Exception as e:
+        print(e)
+        return jsonify({"ResultMessege": "Error in updated", "error": str(e)})
+@app.route("/AddEvent", methods=["POST"])
+def AddEvent():
+    try:
+        tab_data = request.form
+        datafiles = request.files
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+        cursor.execute("SELECT ID FROM events ORDER BY ID DESC LIMIT 1")
+        last_id = cursor.fetchone()
+        ID = 1 if not last_id else last_id[0] + 1
+        new_folder_path = f"./EVENT/{ID}"
+        os.mkdir(new_folder_path)
+        print(tab_data)
+        author = tab_data["AuthorName"]
+        Headline = tab_data["HeadLine"]
+        EventDate = tab_data['EventDate']
+        Location = tab_data['Location']
+        Paragraph = tab_data['Paragraph']
+        coverphoto = datafiles['Coverphoto']
+        coverphoto_path = save_file(coverphoto, new_folder_path)
+        coverphoto_path=coverphoto_path.replace('./EVENT', '').replace('\\', '/')
+        date_object = datetime.strptime(EventDate, '%m/%d/%Y %I:%M:%S %p')
+
+
+# Get the day of the week (Monday = 0, Sunday = 6)
+        day_of_week = date_object.weekday()
+
+# Convert day_of_week to the actual name of the day
+        days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        day_name = days_of_week[day_of_week]
+        formatted_date_string = date_object.strftime('%Y-%m-%d') + f', ({day_name})'
+
+        MESSAGE=insert_event(conn,ID, Headline, formatted_date_string, Location, Paragraph, coverphoto_path, author)
+        return jsonify({"ResultMessege":MESSAGE})
+    except Exception as e:
+        print(e)
+        return jsonify({"ResultMessege": "Error in insert EVENT", "error": str(e)})
+@app.route("/GetDataEvent", methods=["POST"])
+def GetDataEvent():
+    try:
+        conn = mysql.connector.connect(**config)
+
+        cursor = conn.cursor()
+        data = request.json
+        EventId = int(data["eventId"])
+        select_query = "SELECT * FROM events WHERE ID={}".format(EventId)
+        cursor.execute(select_query)
+        records = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(records, columns=columns)
+        df.rename(columns={'AUTHOR': 'AuthorName'}, inplace=True)
+        df.rename(columns={'NAME': 'HeadLine'}, inplace=True)
+        df.rename(columns={'DATE':'EventDate'}, inplace=True)
+        df.rename(columns={'LOCATION':'Location'}, inplace=True)
+        df.rename(columns={'DESCRIPTION':'Paragraph'}, inplace=True)
+        df.rename(columns={'IMAGE_PATH':'Image'}, inplace=True)
+        df.rename(columns={'ID':'EventId'}, inplace=True)
+        df['Image']="https://retromagapi.azurewebsites.net/EVENT"+df['Image']
+        results_json = df.to_json(orient='records')         
+        
+        # Create a dictionary with the desired structure    
+        return {"ModelList":json.loads(results_json)}
+    except Exception as e:
+        print(e)
+        return jsonify({"ResultMessege": "Error in updated", "error": str(e)})
+@app.route("/GetDataEventDelete", methods=["GET"])
+def GetDataEventDelete():
+    try:
+        conn = mysql.connector.connect(**config)
+
+        cursor = conn.cursor()
+        select_query = "SELECT ID,NAME,AUTHOR FROM events"
+        cursor.execute(select_query)
+        records = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(records, columns=columns)
+        df.rename(columns={'AUTHOR': 'AuthorName'}, inplace=True)
+        df.rename(columns={'NAME': 'HeadLine'}, inplace=True)
+        df.rename(columns={'ID':'EventId'}, inplace=True)
+        results_json = df.to_json(orient='records')         
+        
+        # Create a dictionary with the desired structure    
+        return {"Model":json.loads(results_json)}
+    except Exception as e:
+        print(e)
+        return jsonify({"ResultMessege": "Error in updated", "error": str(e)})
+
+  
+@app.route("/DeleteEvent", methods=["POST"])
+def DeleteEvent():
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+        data = request.json
+        ID = data["eventId"]
+        path = f"./EVENT/{ID}"
+
+# Remove the directory and its contents
+        try:
+            shutil.rmtree(path)
+            cursor.execute("DELETE FROM events WHERE ID ={}".format(ID))
+            conn.commit()
+            return jsonify({"ResultMessege": "EVENT Deleted successfully"})
+        except OSError as e:
+            cursor.execute("DELETE FROM events WHERE ID ={}".format(ID))
+            conn.commit()
+            
+            return jsonify({"ResultMessege": "Magazine Deleted successfully"})
+                # return jsonify({"error": str(e)})     
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80)
