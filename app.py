@@ -297,6 +297,21 @@ def get_data_magazine():
         index["Videos"] = videos
         index["Headline"] = df0.loc[0].Headline
         index["AuthorName"] = df0.loc[0].author
+        select_query = "SELECT * FROM events"
+        cursor.execute(select_query)
+        records = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(records, columns=columns)
+        df.rename(columns={'AUTHOR': 'AuthorName'}, inplace=True)
+        df.rename(columns={'NAME': 'HeadLine'}, inplace=True)
+        df.rename(columns={'DATE':'EventDate'}, inplace=True)
+        df.rename(columns={'LOCATION':'Location'}, inplace=True)
+        df.rename(columns={'DESCRIPTION':'Paragraph'}, inplace=True)
+        df.rename(columns={'IMAGE_PATH':'Image'}, inplace=True)
+        df.rename(columns={'ID':'EventId'}, inplace=True)
+        df['Image']="https://retromagapi.azurewebsites.net/EVENT"+df['Image']
+        results_json = df.to_json(orient='records')
+        index["Events"]=json.loads(results_json)
 
         processed_data = {"Model": index}
         return jsonify(processed_data)
@@ -851,7 +866,7 @@ def EditLatestFiveMagazine():
         conn = mysql.connector.connect(**config)
         cursor = conn.cursor()
         data = request.json
-        # print(data)
+        print(data)
         LatestId = int(data["latestId"])
         MagazineId = int(data["magazineId"])
         NewMagazineId = int(data["newMagazineId"])
