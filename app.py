@@ -533,7 +533,7 @@ def GetAllMagazinesWithCategories():
             listofmag = []
             for i in range(len(df)):
                 dt = df.loc[i]
-                query3 = f"SELECT ID,category_ID,author FROM magazine WHERE ID={dt.MAG_ID};"
+                query3 = f"SELECT ID,category_ID,Headline,author FROM magazine WHERE ID={dt.MAG_ID};"
                 cursor.execute(query3)
                 result3 = cursor.fetchall()
                 columns = [desc[0] for desc in cursor.description]
@@ -543,7 +543,7 @@ def GetAllMagazinesWithCategories():
                 df3 .rename(columns={'category_ID': 'CategoryId'}, inplace=True)
                 df3 .rename(columns={'author': 'AuthorName'}, inplace=True)
                 results_jsondata = df3.to_json(orient='records')         
-                listofmag.append(json.loads(results_jsondata))
+                listofmag.append(json.loads(results_jsondata)[0])
             ALLDATA={"AllMagazines":listofdata,"LatestFiveMag":listofmag}
             processed_data = {"Model": ALLDATA}
             return jsonify(processed_data)
