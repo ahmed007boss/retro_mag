@@ -851,10 +851,10 @@ def EditLatestFiveMagazine():
         conn = mysql.connector.connect(**config)
         cursor = conn.cursor()
         data = request.json
-
-        LatestId = int(data["LatestId"])
-        MagazineId = int(data["MagazineId"])
-        NewMagazineId = int(data["NewMagazineId"])
+        # print(data)
+        LatestId = int(data["latestId"])
+        MagazineId = int(data["magazineId"])
+        NewMagazineId = int(data["newMagazineId"])
 
         update_query = """
             UPDATE latestFiveMagazines 
