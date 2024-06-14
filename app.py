@@ -516,7 +516,7 @@ def GetAllMagazinesWithCategories():
             listofmag = []
             for i in range(len(df)):
                 dt = df.loc[i]
-                query3 = f"SELECT ID,category_ID,author FROM magazine WHERE ID={dt.MAG_ID};"
+                query3 = f"SELECT ID,category_ID,Headline,author FROM magazine WHERE ID={dt.MAG_ID};"
                 cursor.execute(query3)
                 result3 = cursor.fetchall()
                 columns = [desc[0] for desc in cursor.description]
