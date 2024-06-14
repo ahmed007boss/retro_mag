@@ -280,21 +280,7 @@ def get_data_magazine():
         index["Videos"] = videos
         index["Headline"] = df0.loc[0].Headline
         index["AuthorName"] = df0.loc[0].author
-        select_query = "SELECT * FROM events"
-        cursor.execute(select_query)
-        records = cursor.fetchall()
-        columns = [desc[0] for desc in cursor.description]
-        df = pd.DataFrame(records, columns=columns)
-        df.rename(columns={'AUTHOR': 'AuthorName'}, inplace=True)
-        df.rename(columns={'NAME': 'HeadLine'}, inplace=True)
-        df.rename(columns={'DATE':'EventDate'}, inplace=True)
-        df.rename(columns={'LOCATION':'Location'}, inplace=True)
-        df.rename(columns={'DESCRIPTION':'Paragraph'}, inplace=True)
-        df.rename(columns={'IMAGE_PATH':'Image'}, inplace=True)
-        df.rename(columns={'ID':'EventId'}, inplace=True)
-        df['Image']="https://retromagapi.azurewebsites.net/EVENT"+df['Image']
-        results_json = df.to_json(orient='records')
-        index["Events"]=json.loads(results_json)
+
         processed_data = {"Model": index}
         return jsonify(processed_data)
     except Exception as e:
@@ -522,9 +508,27 @@ def GetAllMagazinesWithCategories():
                     "AuthorName": row['author']
                 }
                 listofdata.append(magazine_info)
-                
-
-            processed_data = {"ModelList": listofdata}
+            query = "SELECT * FROM latestFiveMagazines;"
+            cursor.execute(query)
+            result = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            df = pd.DataFrame(result, columns=columns)
+            listofmag = []
+            for i in range(len(df)):
+                dt = df.loc[i]
+                query3 = f"SELECT ID,category_ID,author FROM magazine WHERE ID={dt.MAG_ID};"
+                cursor.execute(query3)
+                result3 = cursor.fetchall()
+                columns = [desc[0] for desc in cursor.description]
+                df3 = pd.DataFrame(result3, columns=columns)
+                df3["LatestId"]=dt["ID"]
+                df3 .rename(columns={'ID': 'MagazineId'}, inplace=True)
+                df3 .rename(columns={'category_ID': 'CategoryId'}, inplace=True)
+                df3 .rename(columns={'author': 'AuthorName'}, inplace=True)
+                results_jsondata = df3.to_json(orient='records')         
+                listofmag.append(json.loads(results_jsondata))
+            ALLDATA={"AllMagazines":listofdata,"LatestFiveMag":listofmag}
+            processed_data = {"Model": ALLDATA}
             return jsonify(processed_data)
     except Exception as e:
         return jsonify({"error": str(e)})     
@@ -537,9 +541,15 @@ def DeleteMagazines():
         data = request.json
         ID = data["magazineId"]
         path = f"./IMAGE/{ID}"
+        check_query = "SELECT COUNT(*) FROM latestFiveMagazines WHERE MAG_ID = %s"
+        cursor.execute(check_query, (ID,))
+        result = cursor.fetchone()
 
-# Remove the directory and its contents
-        try:
+        exists = result[0] > 0
+        if exists:
+             return jsonify({"ResultMessege": "Can't Delete this magazine change it from LatestFiveMagazine First"})   
+        else:
+         try:
             shutil.rmtree(path)
             cursor.execute("DELETE FROM magazine WHERE ID ={}".format(ID))
             conn.commit()
@@ -550,7 +560,7 @@ def DeleteMagazines():
             cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
             conn.commit()
             return jsonify({"ResultMessege": "Magazine Deleted successfully"})
-        except OSError as e:
+         except OSError as e:
             cursor.execute("DELETE FROM magazine WHERE ID ={}".format(ID))
             conn.commit()
             cursor.execute("DELETE FROM context WHERE MAG_ID ={}".format(ID))
@@ -560,8 +570,7 @@ def DeleteMagazines():
             cursor.execute("DELETE FROM videos WHERE MAG_ID ={}".format(ID))
             conn.commit()
             return jsonify({"ResultMessege": "Magazine Deleted successfully"})
-                # return jsonify({"error": str(e)})     
-
+           
     except Exception as e:
         return jsonify({"error": str(e)})     
 
@@ -780,48 +789,68 @@ def ShowHeadIdMagazine():
         print(e)
         return jsonify({"ResultMessege": "Error in show data", "error": str(e)})
     
-# @app.route("/ShowHeadIdMagazine", methods=["GET"])
-# def ShowHeadIdMagazine():
+@app.route("/ShowLatestEditMagazine", methods=["GET"])
+def ShowLatestEditMagazine():
 
-#     try:
-#         conn = mysql.connector.connect(**config)
-#         cursor = conn.cursor()
-#         query = f"SELECT ID,Headline FROM `magazine`"
-#         cursor.execute(query)
-#         result = cursor.fetchall()
-#         columns = [desc[0] for desc in cursor.description]
-#         df = pd.DataFrame(result, columns=columns)
-#         results_json = df.to_json(orient='records')         
-        
-#         # Create a dictionary with the desired structure    
-#         response_data = {"Model": json.loads(results_json)}
-#         return response_data
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+        query = f"SELECT ID,Headline FROM `magazine`"
+        cursor.execute(query)
+        result = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df0 = pd.DataFrame(result, columns=columns)
+        results_json = df0.to_json(orient='records')         
+        query = "SELECT * FROM latestFiveMagazines;"
+        cursor.execute(query)
+        result = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(result, columns=columns)
+        listofdata = []
+        for i in range(len(df)):
+            dt = df.loc[i]
+            query3 = f"SELECT * FROM magazine WHERE ID={dt.MAG_ID};"
+            cursor.execute(query3)
+            result3 = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            df3 = pd.DataFrame(result3, columns=columns)
+            df3["LatestId"]=dt["ID"]
+            df3.rename(columns={'ID': 'MagId'}, inplace=True)
+            results_jsondata = df3.to_json(orient='records')         
+            listofdata.append(json.loads(results_jsondata))
+        data={"AllMag":json.loads(results_json),"LatestFiveMagazine":listofdata}  
+        response_data = {"Model": data}
+        return response_data
     
-#     except Exception as e:
-#         print(e)
-#         return jsonify({"ResultMessege": "Error in show data", "error": str(e)})
+    except Exception as e:
+        print(e)
+        return jsonify({"ResultMessege": "Error in show data", "error": str(e)})
 
 @app.route("/EditLatestFiveMagazine", methods=["POST"])
 def EditLatestFiveMagazine():
+    conn = None
+    cursor = None
     try:
         conn = mysql.connector.connect(**config)
         cursor = conn.cursor()
         data = request.json
-        index = []
-        index.append(data["1"])
-        index.append(data["2"])
-        index.append(data["3"])
-        index.append(data["4"])
-        index.append(data["5"])
-        insert_query = """INSERT INTO latestFiveMagazines (ID, MAG_ID) VALUES (%s, %s)"""
-        cursor.execute("DELETE FROM `latestFiveMagazines`")
-        conn.commit()
-        for i in range(len(index)):
-            cursor.execute(insert_query, (int(i+1), int(index[i])))
+
+        LatestId = int(data["LatestId"])
+        MagazineId = int(data["MagazineId"])
+        NewMagazineId = int(data["NewMagazineId"])
+
+        update_query = """
+            UPDATE latestFiveMagazines 
+            SET MAG_ID = %s 
+            WHERE ID = %s AND MAG_ID = %s
+        """
         
+        cursor.execute(update_query, (NewMagazineId, LatestId, MagazineId))
         conn.commit()
-        return jsonify({"ResultMessege": "Five Latest Magazine updated successfully"})
-    except Exception as e:
+
+        return jsonify({"ResultMessege": "Replaced successfully"})
+    
+    except Error as e:
         print(e)
         return jsonify({"ResultMessege": "Error in updated", "error": str(e)})
 @app.route("/AddEvent", methods=["POST"])
