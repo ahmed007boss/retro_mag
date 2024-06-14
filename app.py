@@ -294,7 +294,7 @@ def get_data_magazine():
         df.rename(columns={'ID':'EventId'}, inplace=True)
         df['Image']="https://retromagapi.azurewebsites.net/EVENT"+df['Image']
         results_json = df.to_json(orient='records')
-        index["Events"]=results_json
+        index["Events"]=json.loads(results_json)
         processed_data = {"Model": index}
         return jsonify(processed_data)
     except Exception as e:
