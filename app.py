@@ -196,24 +196,41 @@ def get_all_magazine():
             latest_query = "SELECT MAG_ID FROM latestFiveMagazines;"
             latest_df = fetch_data(cursor, latest_query)
             latest_magazine_ids = latest_df['MAG_ID'].tolist()
-            latest_query = f"""
-            SELECT m.ID AS magazine_ID, m.author, m.Headline, m.Image_ID, m.category_ID
-            FROM magazine m
-            WHERE m.ID IN ({','.join(map(str, latest_magazine_ids))});
-            """
-            latest_df = fetch_data(cursor, latest_query)
-
+            # print(latest_magazine_ids)
             listofdata = []
-            for _, row in latest_df.iterrows():
-                # print(row["magazine_ID"])
+            for i in range(len(latest_magazine_ids)):
+                query0 = f"SELECT * FROM `magazine` WHERE `ID`={latest_magazine_ids[i]};"
+                cursor.execute(query0)
+                result0 = cursor.fetchall()
+                columns = [desc[0] for desc in cursor.description]
+                df0 = pd.DataFrame(result0, columns=columns)
                 magazine_data = {
-                    "ID": int(row["magazine_ID"]),
-                    "AuthorName": row["author"],
-                    "Headline": row["Headline"],
-                    "Image": f"https://retromagapi.azurewebsites.net/images{image_mapping[row['Image_ID']]}",
-                    "CategoryId": int(row['category_ID'])
+                    "ID": int(df0.loc[0]["ID"]),
+                    "AuthorName": df0.loc[0]["author"],
+                    "Headline": df0.loc[0]["Headline"],
+                    "Image": f"https://retromagapi.azurewebsites.net/images{image_mapping[df0.loc[0]['Image_ID']]}",
+                    "CategoryId": int(df0.loc[0]['category_ID'])
                 }
                 listofdata.append(magazine_data)
+
+
+            # latest_query = f"""
+            # SELECT m.ID AS magazine_ID, m.author, m.Headline, m.Image_ID, m.category_ID
+            # FROM magazine m
+            # WHERE m.ID IN ({','.join(map(str, latest_magazine_ids))});
+            # """
+            # latest_df = fetch_data(cursor, latest_query)
+
+            # for _, row in latest_df.iterrows():
+            #     # print(row["magazine_ID"])
+            #     magazine_data = {
+            #         "ID": int(row["magazine_ID"]),
+            #         "AuthorName": row["author"],
+            #         "Headline": row["Headline"],
+            #         "Image": f"https://retromagapi.azurewebsites.net/images{image_mapping[row['Image_ID']]}",
+            #         "CategoryId": int(row['category_ID'])
+            #     }
+                # listofdata.append(magazine_data)
 
             result["LatestFiveMagazines"] = listofdata
             EVENTDATA=fetch_all_events(conn)
@@ -516,7 +533,7 @@ def GetAllMagazinesWithCategories():
             listofmag = []
             for i in range(len(df)):
                 dt = df.loc[i]
-                query3 = f"SELECT ID,category_ID,Headline,author FROM magazine WHERE ID={dt.MAG_ID};"
+                query3 = f"SELECT ID,category_ID,author FROM magazine WHERE ID={dt.MAG_ID};"
                 cursor.execute(query3)
                 result3 = cursor.fetchall()
                 columns = [desc[0] for desc in cursor.description]
@@ -865,7 +882,7 @@ def AddEvent():
         ID = 1 if not last_id else last_id[0] + 1
         new_folder_path = f"./EVENT/{ID}"
         os.mkdir(new_folder_path)
-        print(tab_data)
+        # print(tab_data)
         author = tab_data["AuthorName"]
         Headline = tab_data["HeadLine"]
         EventDate = tab_data['EventDate']
